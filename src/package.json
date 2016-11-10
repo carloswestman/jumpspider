@@ -1,0 +1,13 @@
+{
+  "name": "jumpSpider",
+  "version": "0.0.0",
+  "description": "A simple exercise to explore data crawling with NodeJS and MySQL",
+  "main": "server.js",
+  "author": "Carlos Westman",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^0.19.0",
+    "url-parse": "^1.0.5",
+    "request": "^2.65.0"
+  }
+}
