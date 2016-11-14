@@ -1,4 +1,11 @@
 {
-  "id": "insert private string here", 
-  "mongoConnectionString": "insert private string here"
+  "id": "insert private string here",
+  "MySqlConnectionString": {
+    "connectionLimit" : 100,
+    "host"     : "localhost",
+    "user"     : "finley",
+    "password" : "some_pass",
+    "database" : "jumperSpider",
+    "debug"    :  false
+  }
 }
