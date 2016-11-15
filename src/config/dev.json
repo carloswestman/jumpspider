@@ -1,0 +1,13 @@
+{
+  "mySqlConnectionString": {
+    "connectionLimit" : 100,
+    "host"     : "localhost",
+    "user"     : "finley",
+    "password" : "some_pass",
+    "database" : "jumperSpider",
+    "debug"    :  false,
+    "multipleStatements" :true
+  },
+  "logLevel": "info",
+  "port": "8080"
+}

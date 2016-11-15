@@ -11,12 +11,10 @@ var URL = require('url-parse');                 //parse URL strings
 var q = require('q');                           //promises library for async processing
 var express = require("express");               //routing node server
 var mysql = require('mysql');                   //mysql connector
-
+var config = require('config');                 //Configuration control for production node deployments
+var winston = require('winston')                //message logging library
 
 var tools = require('./tools.js');               //Some tools
-var config = require('./server.config.json');   //Load configuration and private tokens
-
-
 
 /// SQL Queries
 var checkTableExistsQuery ="show tables like ?";
@@ -33,8 +31,8 @@ var insertTableView5Query = ") VALUES ?";
 var selectTable1Query = 'SELECT * from ';
 var selectTable3Query = ' LIMIT 500';
 var selectRepositoryQuery = 'SELECT `exectimestamp`, `jobid`, `url` from repository LIMIT 1000';
-var selectRepositoryDocument1Query = 'SELECT `document` from repository where `jobid =';
-
+var selectRepositoryDocument1Query = 'SELECT `document` from repository where `jobid` =';
+var dropAllTablesQuery = "SELECT (concat(table_schema , '.' , table_name)) as val FROM information_schema.tables WHERE table_schema = '" + config.mySqlConnectionString.database + "' AND (table_name LIKE 'table%')";
 
 
 //Init Application
@@ -42,14 +40,16 @@ var app       =    express();
 
 
 //Create connection pool
-var pool      =    mysql.createPool(config.MySqlConnectionString);
+var pool      =    mysql.createPool(config.mySqlConnectionString);
+//Verbosity of the logger
+winston.level = config.logLevel;
 
 
 //These functions perform key tasks in the flow
 function handleDatabaseCheckTables() {
     //Check if `repository` and `Data tables exit. if not, they are created.
 
-    console.log("handleDatabaseCheckTables Started");
+    winston.log('info', "handleDatabaseCheckTables Started");
 
     var deferredRepository = q.defer();
     var deferredData = q.defer();
@@ -57,12 +57,12 @@ function handleDatabaseCheckTables() {
 
     pool.getConnection(function(err,connection){
         if (err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             deferredRepository.reject(err);
             deferredData.reject(err);
             return;
         }
-        console.log('connected as id ' + connection.threadId);
+        winston.log('info', 'connected as id ' + connection.threadId);
 
         //Check that table repository exists and create it.
         connection.query(checkTableExistsQuery,[['repository']], function(err,rows,fields){
@@ -71,24 +71,24 @@ function handleDatabaseCheckTables() {
                 {
                     connection.query((createTableRepositoryQuery),function(err,rows,fields) {
                         if (!err) {
-                            console.log("Table repository created");
+                            winston.log('info', "Table repository created");
                             deferredRepository.resolve();
                         }
                         else {
-                            console.log(err.message);
+                            winston.log('info', err.message);
                             deferredRepository.reject(err);
                         }
                     });
                 }
                 else
                 {
-                    console.log('Table repository exists');
+                    winston.log('info', 'Table repository exists');
                     deferredRepository.resolve();
                 }
             }
             else
             {
-                console.log(err.message);
+                winston.log('info', err.message);
                 deferredRepository.reject(err);
             }
         });
@@ -100,24 +100,24 @@ function handleDatabaseCheckTables() {
                 {
                     connection.query((createTableDataQuery),function(err,rows,fields) {
                         if (!err) {
-                            console.log("Table data created");
+                            winston.log('info', "Table data created");
                             deferredData.resolve();
                         }
                         else {
-                            console.log(err.message);
+                            winston.log('info', err.message);
                             deferredData.reject(err);
                         }
                     });
                 }
                 else
                 {
-                    console.log('Table data exists');
+                    winston.log('info', 'Table data exists');
                     deferredData.resolve();
                 }
             }
             else
             {
-                console.log(err.message);
+                winston.log('info', err.message);
                 deferredData.reject(err);
             }
         });
@@ -125,31 +125,31 @@ function handleDatabaseCheckTables() {
         connection.on('error', function(err) {
             //res.json({"code" : 100, "status" : "Error in connection database"});
             //return;
-            console.log("handleDatabaseCheckTables promise rejected");
+            winston.log('info', "handleDatabaseCheckTables promise rejected");
             promise.reject({"code" : 100, "status" : "Error in connection database"});
         });
     });
-    console.log("handleDatabaseCheckTables Ended");
+    winston.log('info', "handleDatabaseCheckTables Ended");
     return promise;
 }
 function fetchUrl(req) {
 
-    console.log("fetchUrl Started");
+    winston.log('info', "fetchUrl Started");
     var deferred = q.defer();
     request(req.url, function (error, response, body) {
         if (error) {
-            console.log("Error: " + error);
+            winston.log('info', "Error: " + error);
             deferred.refect(error);
         }
         // Check status code (200 is HTTP OK)
-        console.log("Status code: " + response.statusCode);
+        winston.log('info', "Status code: " + response.statusCode);
         if (response.statusCode === 200) {
             var response = req;
             response.document = body;
             deferred.resolve(response);
         }
     });
-    console.log("fetchUrl Ended");
+    winston.log('info', "fetchUrl Ended");
     return deferred.promise;
 }
 function handleDatabaseStoreDocument(req){
@@ -158,7 +158,7 @@ function handleDatabaseStoreDocument(req){
     var jobId = req.jobId;
     var url = req.url;
     var document = req.document;
-    console.log("handleDatabaseStoreDocument Started");
+    winston.log('info', "handleDatabaseStoreDocument Started");
     var deferred = q.defer();
 
     document.replace("'","\'");
@@ -166,39 +166,39 @@ function handleDatabaseStoreDocument(req){
     var value = [jobId, url, document];
     pool.getConnection(function(err,connection){
         if (err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             return deferred.reject(err);
         }
-        console.log('connected as id ' + connection.threadId);
+        winston.log('info', 'connected as id ' + connection.threadId);
 
         connection.query(insertTableRepositoryQuery, [[value]], function(err,rows,fields){
             connection.release();
             if(!err) {
                 //res.json(rows);
-                console.log('Table repository populated');
+                winston.log('info', 'Table repository populated');
                 var response = req;
                 response.document = document;
                 deferred.resolve(response);
             }
             else
             {
-                console.log(err.message);
+                winston.log('info', err.message);
                 deferred.reject(err);
             }
         });
 
         connection.on('error', function(err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             deferred.reject(err);
 
         });
     });
-    console.log("handleDatabaseStoreDocument Ended");
+    winston.log('info', "handleDatabaseStoreDocument Ended");
     return deferred.promise;
 }
 function parseTable(req) {
 
-    console.log("parseTables Started");
+    winston.log('info', "parseTables Started");
     var deferred = q.defer();
 
     var document = req.document;
@@ -220,44 +220,44 @@ function parseTable(req) {
     pageStatistics.numberTeamNames = teamNames.length; // must be 30 teams;
 
     //Test page statistics
-    console.log("Testing Page Structure Started");
+    winston.log('info', "Testing Page Structure Started");
     var noTestsFailed = 0;
     var noTestsPassed = 0;
     if(pageStatistics.pageTitle == undefined)
     {
-        console.log("Warning: pageTitle is undefined");
+        winston.log('info', "Warning: pageTitle is undefined");
     }
     if(pageStatistics.NumberTableOfContents != 1)
     {
         noTestsFailed++;
-        console.log("Warning: NumberTableOfContents is not 1");
+        winston.log('info', "Warning: NumberTableOfContents is not 1");
     }
     else
         noTestsPassed ++;
     if(pageStatistics.numberConferenceHeaddings !=2)
     {
         noTestsFailed++;
-        console.log("Warning: numberConferenceHeaddings is not 2");
+        winston.log('info', "Warning: numberConferenceHeaddings is not 2");
     }
     else
         noTestsPassed ++;
     if(pageStatistics.numberDivisionHeadingNames != 6) {
         noTestsFailed++;
-        console.log("Warning: numberDivisionHeadingNames is not 6");
+        winston.log('info', "Warning: numberDivisionHeadingNames is not 6");
     }
     else
         noTestsPassed ++;
     if(pageStatistics.numberTeamNames != 30)
     {
         noTestsFailed++;
-        console.log("Warning: numberTeamNames is not 30");
+        winston.log('info', "Warning: numberTeamNames is not 30");
     }
     else
         noTestsPassed ++;
 
-    console.log(noTestsPassed + ' tests passed');
-    console.log(noTestsFailed + ' tests failed');
-    console.log("Testing Page Structure Finished");
+    winston.log('info', noTestsPassed + ' tests passed');
+    winston.log('info', noTestsFailed + ' tests failed');
+    winston.log('info', "Testing Page Structure Finished");
 
     //Get Column Names
     var columnNames = divisionHeadingNames.first().nextAll() ;
@@ -297,7 +297,7 @@ function parseTable(req) {
         arrJsonElements.push(element);
     }
 
-    console.log("parseTables Ended");
+    winston.log('info', "parseTables Ended");
 
     var response = req;
     response.arrJsonElements = arrJsonElements;
@@ -310,16 +310,16 @@ function parseTable(req) {
 }
 function handleDatabaseCreateDictionary(arrArrData) {
 
-    console.log("handleDatabaseCreateDictionary Started");
+    winston.log('info', "handleDatabaseCreateDictionary Started");
     var deferred = q.defer();
     pool.getConnection(function(err,connection){
         if (err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             deferred.reject(err);
             return;
         }
 
-        console.log('connected as id ' + connection.threadId);
+        winston.log('info', 'connected as id ' + connection.threadId);
 
         //pupulate table, NAME is the chosen Key for the info. (should i change that for a column number??? probably yes...
         var values = [];
@@ -338,32 +338,32 @@ function handleDatabaseCreateDictionary(arrArrData) {
         }
 
         connection.query(insertTableDataQuery, [values], function(err,rows,fields){
-            //console.log(err.message);
+            //winston.log('info', err.message);
             connection.release();
             if(!err) {
-                console.log("Table data created");
+                winston.log('info', "Table data created");
                 deferred.resolve();
                 return;
             }
             else {
-                console.log(err);
+                winston.log('info', err);
                 deferred.reject(err);
                 return;
             }
         });
 
         connection.on('error', function(err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             deferred.reject(error);
 
         });
     });
-    console.log("handleDatabaseCreateDictionary Ended");
+    winston.log('info', "handleDatabaseCreateDictionary Ended");
     return deferred.promise;
 } //Not used
 function handleDatabaseCreateViewTable(req){
 
-    console.log("handleDatabaseCreateViewTable Started");
+    winston.log('info', "handleDatabaseCreateViewTable Started");
     var deferred = q.defer();
 
     var uniqueId = req.jobId;
@@ -372,11 +372,11 @@ function handleDatabaseCreateViewTable(req){
 
     pool.getConnection(function(err,connection){
         if (err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             deferred.reject(err);
             return;
         }
-        console.log('connected as id ' + connection.threadId);
+        winston.log('info', 'connected as id ' + connection.threadId);
 
         var columnsString = '';
         if(arrArrData.length > 0)
@@ -397,20 +397,20 @@ function handleDatabaseCreateViewTable(req){
         var createTableViewQuery = createTableView1Query + tableName + createTableView3Query + columnsString + createTableView5Query;
 
         connection.query(createTableViewQuery, function(err,rows,fields){
-            //console.log(err.message);
+            //winston.log('info', err.message);
             connection.release();
             if(!err) {
                 //res.json(rows);
-                console.log('Table ' + tableName + ' created');
-                console.log("handleDatabaseCreateViewTable promise resolved");
+                winston.log('info', 'Table ' + tableName + ' created');
+                winston.log('info', "handleDatabaseCreateViewTable promise resolved");
                 var response = req;
                 response.tableName = tableName;
                 deferred.resolve(response);
             }
             else
             {
-                console.log(err.message);
-                console.log("handleDatabaseCreateViewTable promise rejected");
+                winston.log('info', err.message);
+                winston.log('info', "handleDatabaseCreateViewTable promise rejected");
                 deferred.reject(err);
                 return;
             }
@@ -419,17 +419,17 @@ function handleDatabaseCreateViewTable(req){
         connection.on('error', function(err) {
             //res.json({"code" : 100, "status" : "Error in connection database"});
             //return;
-            console.log("handleDatabaseCreateViewTable promise rejected");
+            winston.log('info', "handleDatabaseCreateViewTable promise rejected");
             deferred.reject({"code" : 100, "status" : "Error in connection database"});
         });
     });
-    console.log("handleDatabaseCreateViewTable Ended");
+    winston.log('info', "handleDatabaseCreateViewTable Ended");
     return deferred.promise;
 }
 function handleDatabasePopulateViewTable(req){
 
 
-    console.log("handleDatabasePopulateViewTable Started");
+    winston.log('info', "handleDatabasePopulateViewTable Started");
     var deferred = q.defer();
 
     var uniqueId = req.jobId;
@@ -438,11 +438,11 @@ function handleDatabasePopulateViewTable(req){
 
     pool.getConnection(function(err,connection){
         if (err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             deferred.reject(err);
             return;
         }
-        console.log('connected as id ' + connection.threadId);
+        winston.log('info', 'connected as id ' + connection.threadId);
 
         //pupulate table, NAME is the chosen Key for the info. (should i change that for a column number??? probably yes...
         var columnsString = '';
@@ -477,27 +477,27 @@ function handleDatabasePopulateViewTable(req){
         }
 
         connection.query(insertTableViewQuery, [values], function(err,rows,fields){
-            //console.log(err.message);
+            //winston.log('info', err.message);
             connection.release();
             if(!err) {
-                console.log('Table ' + tableName + ' populated');
+                winston.log('info', 'Table ' + tableName + ' populated');
                 var response = req;
                 deferred.resolve(response);
             }
             else
             {
-                console.log(err.message);
+                winston.log('info', err.message);
                 deferred.reject(err);
             }
         });
 
         connection.on('error', function(err) {
-            console.log({"code" : 100, "status" : "Error in connection database"});
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
             deferred.reject(error);
 
         });
     });
-    console.log("handleDatabasePopulateViewTable Ended");
+    winston.log('info', "handleDatabasePopulateViewTable Ended");
     return deferred.promise;
 }
 function processJob(url) {
@@ -507,7 +507,7 @@ function processJob(url) {
     var jobId = tools.createUUID();
     var pageStatistics = {};
 
-    console.log("job: " + jobId + " Visiting page " + url);
+    winston.log('info', "job: " + jobId + " Visiting page " + url);
 
     var req = {};
     req.url = url;
@@ -522,13 +522,13 @@ function processJob(url) {
             deferred.resolve(res); })
         .catch(function (error) {
                // Handle any error from all above steps
-                console.log("Job processing error");
-                console.log(error);
+                winston.log('info', "Job processing error");
+                winston.log('info', error);
                 deferred.reject(error);
              })
         .done();
 
-    console.log("processJob Ended");
+    winston.log('info', "processJob Ended");
     return deferred.promise;
 };
 
@@ -548,12 +548,12 @@ handleDatabaseCheckTables()
             processJob(pagesToCrawl[i]);
             urlCount++;
         }
-        console.log("Jobs processed: " + urlCount);
+        winston.log('info', "Jobs processed: " + urlCount);
     });
 
 app.route('/api/table/:jobId')
     .get(function(req,res){
-        console.log('GET /api/table');
+        winston.log('info', 'GET /api/table');
 
         //get URL params
         var jobId = req.params.jobId; //("name");
@@ -565,13 +565,14 @@ app.route('/api/table/:jobId')
                 res.status(100).send(err);
                 res.end();
             }
-            console.log('connected as id ' + connection.threadId);
+            winston.log('info', 'connected as id ' + connection.threadId);
 
             var selectTableQuery = selectTable1Query + table + selectTable3Query;
             connection.query(selectTableQuery, function(err,rows,fields){
                 connection.release();
                 if(!err) {
                     //res.json(rows);
+                    res.contentType('application/json');
                     res.status(200).send(JSON.stringify(rows));
                     res.end();
                 }
@@ -591,7 +592,7 @@ app.route('/api/table/:jobId')
 
 app.route('/api/repository')
     .get(function(req,res){
-        console.log('GET /api/repository');
+        winston.log('info', 'GET /api/repository');
 
 
         pool.getConnection(function(err,connection){
@@ -599,45 +600,13 @@ app.route('/api/repository')
                 res.status(100).send(err);
                 res.end();
             }
-            console.log('connected as id ' + connection.threadId);
+            winston.log('info', 'connected as id ' + connection.threadId);
 
             connection.query(selectRepositoryQuery, function(err,rows,fields){
                 connection.release();
                 if(!err) {
                     //res.json(rows);
-                    res.status(200).send(JSON.stringify(rows));
-                    res.end();
-                }
-                else
-                {
-                    res.status(400).send(err);
-                    res.end();
-                }
-            });
-
-            connection.on('error', function(err) {
-                res.status(400).send(err);
-                res.end();
-            });
-        });
-    });
-
-app.route('/api/repository')
-    .get(function(req,res){
-        console.log('GET /api/repository');
-
-
-        pool.getConnection(function(err,connection){
-            if (err) {
-                res.status(100).send(err);
-                res.end();
-            }
-            console.log('connected as id ' + connection.threadId);
-
-            connection.query(selectRepositoryQuery, function(err,rows,fields){
-                connection.release();
-                if(!err) {
-                    //res.json(rows);
+                    res.contentType('application/JSON')
                     res.status(200).send(JSON.stringify(rows));
                     res.end();
                 }
@@ -655,16 +624,16 @@ app.route('/api/repository')
         });
     })
     .post(function(req,res){
-        console.log('POST /api/repository');
+        winston.log('info', 'POST /api/repository');
 
 
         //get URL params
-        var url = req.param('url');
+        var url = req.query.url;
         url = url.replace(';','');
 
         processJob(url)
             .then( function (req) {
-                res.status(200).send(JSON.stringify(req));
+                res.status(200).send(req);
                 res.end();
             })
             .catch(function (error) {
@@ -680,7 +649,7 @@ app.route('/api/repository')
 
 app.route('/api/document/:jobId')
     .get(function(req,res){
-        console.log('GET /api/repository/:jobId');
+        winston.log('info', 'GET /api/document/:jobId');
 
         //get URL params
         var jobId = req.params.jobId;
@@ -693,12 +662,13 @@ app.route('/api/document/:jobId')
                 res.status(100).send(err);
                 res.end();
             }
-            console.log('connected as id ' + connection.threadId);
+            winston.log('info', 'connected as id ' + connection.threadId);
 
             connection.query(selectRepositoryDocumentQuery, function(err,rows,fields){
                 connection.release();
                 if(!err) {
-                    res.status(200).send(JSON.stringify(rows));
+                    res.contentType('text/html')
+                    res.status(200).send(rows);
                     res.end();
                 }
                 else
@@ -715,6 +685,59 @@ app.route('/api/document/:jobId')
         });
     });
 
-app.listen(8080);
+app.route('/api/dropalltables')
+    .delete(function(req,res){
+        winston.log('info', 'DELETE /api/dropalltables');
 
+        pool.getConnection(function(err,connection){
+            if (err) {
+                res.status(100).send(err);
+                res.end();
+            }
+            winston.log('info', 'connected as id ' + connection.threadId);
+
+            connection.query(dropAllTablesQuery, function(err,rows,fields){
+                if(!err) {
+                    if(rows.length == 0){
+                        res.status(200).send({"droppedtables": rows.length});
+                        res.end();
+                        connection.release();
+                        return;
+                    }
+                    var dropQuery = '';
+                    for(var i=0; i < rows.length ; i++){
+                        dropQuery = 'DROP TABLE ' + rows[i].val + ';' + dropQuery;
+                    }
+                    connection.query( dropQuery, function (err, rows, fields){
+                        connection.release();
+                        if(!err) {
+                            res.status(200).send({"droppedtables": rows.length});
+                            res.end();
+                        }
+                        else
+                        {
+                            res.status(200).send({"droppedtables": 0});
+                            res.end();
+                        }
+                    } )
+                }
+                else
+                {
+                    res.status(400).send(err);
+                    res.end();
+                }
+            });
+
+            connection.on('error', function(err) {
+                res.status(400).send(err);
+                res.end();
+            });
+        });
+    });
+
+app.listen(config.port);
+
+winston.log('info', 'Listening on port ' + config.port);
+
+module.exports = app; // for testing
 

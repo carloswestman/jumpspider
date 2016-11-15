@@ -7,11 +7,22 @@
   "license": "MIT",
   "dependencies": {
     "cheerio": "^0.19.0",
+    "config": "^1.20.1",
     "express": "^4.10.6",
     "mysql": "^2.5.4",
     "node-uuid": "^1.4.7",
     "q": "^1.4.1",
     "request": "^2.65.0",
-    "url-parse": "^1.0.5"
+    "url-parse": "^1.0.5",
+    "winston": "^2.3.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-http": "^2.0.1",
+    "mocha": "^2.4.5"
+  },
+  "scripts": {
+    "start": "set NODE_ENV=dev && node server.js",
+    "test": "mocha --timeout 10000"
   }
 }
