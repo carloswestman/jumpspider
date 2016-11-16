@@ -25,15 +25,20 @@ Jumpspider has been developed with a bigger distributed architecture in mind. So
 
 
 ## Architecture
+ 
+<img width="50%" src="./assets/architecture.png" align="right" style="float:right" />
 
-The architecture has separate Development and a Test databases, refer to the Install section for details.<br>
-The following table details some of the main components and their role:<br>
+The system architecture is composed of a Node.js server that exposes a Web API and also contains a set of Crawl and Parse Methods and the routines for handling the database. 
+
+An SQL server contains two databases: one for the Development environment and another one for the Test environment. Each database contain a table called 'repository' for storing the Job information, excecution time and the HTML document that was fetched when the job was started. Then the parser methods parse the data and create an unique table for the job that is meant to visualize the extracted HTML data in a tabular way in a table. The table is identified by the job id assigned to the task, for instance the job with an unique id 'b41075920de64561a68201c1280a184e' will create a table named 'tableb41075920de64561a68201c1280a184e'.
+
+The following table details some of the main components and thier role:<br>
 
 <table>
   <tr>
    <th>Environment</th>
    <th>Component</th>
-   <th>Role</th>
+   <th>Description</th>
   </tr>
   <tr>
    <td><b>Node.js</b></td>
