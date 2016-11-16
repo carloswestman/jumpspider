@@ -81,17 +81,21 @@ For extending the solution, tools like GitHub Desktop and the  WebStorm IDE can 
 
 ## Installation
 
-First get a copy of the project from the GitHub repository <a href="https://github.com/carloswestman/jumpspider"> https://github.com/carloswestman/jumpspider</a>
+- First, get a copy of the project from the GitHub repository <a href="https://github.com/carloswestman/jumpspider"> https://github.com/carloswestman/jumpspider</a>.
 
-From the folder where you downloaded the project, go to the src folder '''jumpspider/src''' and run the command:
+- From the folder where you downloaded the project, go to the src folder '''jumpspider/src''' and run the command:
 
-```npm install ```
+```
+npm install 
+```
 
 This will install the module dependencies described in the file ```package.json``` into the folder ```jumpspider/src/node_modules```.
 
-The project has two environments, Development and Test. Each environment uses a separate database. Create two databases for instance: 'jumpspider' and 'jumpspider_test' and a user with admin access to them, for instance: 'finley'.
+- The project has two environments, Development and Test. Each environment uses a separate database. Create two databases, for instance: 'jumpspider' and 'jumpspider_test'.
 
-According to your configuration, make sure that the configuration files for each environment look like this:
+- Create users with admin privileges to the databases, for instance: 'finley'.
+
+- According to your setup, make sure that the configuration files for each environment look like this:
 
 jumpspider/src/config/default.json
 '''
@@ -154,6 +158,9 @@ The server can be run with the command:
 ```
 node server.js
 ```
+When the server starts, it checks if the support tables exists in the database and creates them if they don't exist.
+
+It also runs a test routine that process 3 jobs. It's posible to inspect the console, the database and use the exposed Web API to play with the server.
 
 ## Testing
 
@@ -191,6 +198,11 @@ jumpSpider@0.0.0 test /Users/carloswestman/Documents/dev/jumpspider/jumpspider/s
   11 passing (2s)
 ```
 
+It runs the test script 'jumpspider/src/test/server.js'. The test routine uses semantical statements (BDD approach) and uses the test database.
+
+Console messages are disabled in this environment to avoid interference with the testing.
+
+You can do further inspection debuging the test script or directly inspecting test database.
 
 ## API
 
