@@ -51,10 +51,31 @@ The following table details some of the main components and thier role:<br>
   
   <tr>
    <td></td>
-   <td>URL fetch</td>
+   <td>Crawl & Parsings</td>
    <td>method</td>
-  <td>fetches and URL creating a job with its HTML document in the repository</td>
+  <td>Core system methods including:<br>
+   - processJob()<br>
+   - fetchUrl()<br>
+   - parseTable()
+  </td>
   </tr>
+  
+  <tr>
+   <td></td>
+   <td>Database handling</td>
+   <td>method</td>
+  <td>Database handling methods including:<br>
+   - handleDatabaseCheckTables()<br>
+   - handleDatabaseStoreDocument()<br>
+   - handleDatabaseCreateViewTable<br>
+   - handleDatabasePopulateViewTable()
+  </td>
+  </tr>
+  
+  
+  
+ 
+ 
   
   <tr>
    <td><b>MySQLServer</b></td>
