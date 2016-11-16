@@ -97,7 +97,7 @@ The following table details some of the main components and thier role:<br>
 
 Before starting you will need:
 
-- An instance of <b>Node.js</b> installed 
+- An instance of <b>Node.js</b> and <b>npm</b> (Node Package Manager) are installed 
 - An instance of <b>MySQL</b> server
 - Internet access to perform some mindful and shy HTML crawling
 
