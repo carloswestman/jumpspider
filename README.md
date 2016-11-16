@@ -36,35 +36,40 @@ The following table details some of the main components and thier role:<br>
 
 <table>
   <tr>
-   <th>Environment</th>
    <th>Component</th>
+   <th>Item</th>
+   <th>Type</th>
    <th>Description</th>
   </tr>
+  
   <tr>
    <td><b>Node.js</b></td>
+   <td>Web API</td>
+   <td>Web Methods</td>
+  <td>See the API section for details</td>
+  </tr>
+  
+  <tr>
+   <td></td>
    <td>URL fetch</td>
+   <td>method</td>
+  <td>fetches and URL creating a job with its HTML document in the repository</td>
   </tr>
+  
+  <tr>
+   <td><b>MySQLServer</b></td>
+   <td>repository</td>
+   <td>table</td>
+   <td>Stores Job info and HTML documents</td>
+  </tr>
+  
   <tr>
    <td></td>
-   <td>Parsing</b></td>
+   <td>table%</td>
+   <td>tables</td>
+   <td>A set of tables identified by the job id. Contain parsed data from NBA Division web pages</td>
   </tr>
-  <tr>
-  <tr>
-   <td></td>
-   <td>Web API</b></td>
-  </tr>
-  <tr>
-    <td><b>MySQL</b> storage</td>
-    <td>document repository</td> 
-  </tr>
-  <tr>
-    <td></td>
-    <td>table results</td> 
-  </tr>
-  <tr>
-    <td></td>
-    <td>parsing results</td> 
-  </tr>
+  
 </table>
 
 ## Prerequisites
@@ -99,7 +104,6 @@ This will install the module dependencies described in the file ```package.json`
 
 jumpspider/src/config/default.json
 <pre style="json">
-'''
 {
   "mySqlConnectionString": {
     "connectionLimit" : 100,
@@ -113,12 +117,10 @@ jumpspider/src/config/default.json
   "logLevel": "info",
   "port": "8080"
 }
-'''
 </pre>
 
 jumpspider/src/config/default.json
 <pre style="json">
-'''
 {
   "mySqlConnectionString": {
     "connectionLimit" : 100,
@@ -132,12 +134,10 @@ jumpspider/src/config/default.json
   "logLevel": "info",
   "port": "8080"
 }
-'''
 </pre>
 
 jumpspider/src/config/test.json
 <pre style="json">
-'''
 {
   "mySqlConnectionString": {
     "connectionLimit" : 100,
@@ -151,7 +151,6 @@ jumpspider/src/config/test.json
   "logLevel": "error",
   "port": "8080"
 }
-'''
 </pre>
 
 Note that the 'database' parameter is different for the Test environment.
