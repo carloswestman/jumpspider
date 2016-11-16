@@ -98,6 +98,7 @@ This will install the module dependencies described in the file ```package.json`
 - According to your setup, make sure that the configuration files for each environment look like this:
 
 jumpspider/src/config/default.json
+<pre style="json">
 '''
 {
   "mySqlConnectionString": {
@@ -113,8 +114,10 @@ jumpspider/src/config/default.json
   "port": "8080"
 }
 '''
+</pre>
 
 jumpspider/src/config/default.json
+<pre style="json">
 '''
 {
   "mySqlConnectionString": {
@@ -130,8 +133,10 @@ jumpspider/src/config/default.json
   "port": "8080"
 }
 '''
+</pre>
 
 jumpspider/src/config/test.json
+<pre style="json">
 '''
 {
   "mySqlConnectionString": {
@@ -147,6 +152,7 @@ jumpspider/src/config/test.json
   "port": "8080"
 }
 '''
+</pre>
 
 Note that the 'database' parameter is different for the Test environment.
 
