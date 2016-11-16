@@ -72,12 +72,12 @@ The following table details some of the main components and thier role:<br>
 Before starting you will need:
 
 - An instance of <b>Node.js</b> installed 
-- An instance of MySQL server
+- An instance of <b>MySQL</b> server
 - Internet access to perform some mindful and shy HTML crawling
 
-It is also recommended to use tools like Postman to experiment with the Web API methods and a tool like MySQLWorkbench to review the databases.
+It is also recommended to use tools like <b>Postman</b> to experiment with the Web API methods and a tool like <b>MySQLWorkbench</b> to review the databases.
 
-For extending the solution, tools like GitHub Desktop and the  WebStorm IDE can make your development experience more pleasant.
+For extending the solution, tools like </b>GitHub Desktop</b> and the  <b>WebStorm IDE</b> can make your development experience more pleasant.
 
 ## Installation
 
