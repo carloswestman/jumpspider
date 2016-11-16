@@ -1,6 +1,6 @@
 <img width="100%" src="./assets/jumpspider2.jpg" align="right" style="float:right" />
 # jumpspider
-A Data crawling exercise with NodeJS, MySql, Mocha and Chai
+A Data crawling exercise with NodeJS, MySQL, Mocha and Chai
 
 <img src="https://img.shields.io/badge/VERSION-1.0.0-lightgray.svg">
 <img src="https://img.shields.io/badge/PLATFORM-Node.js-lightgray.svg">
@@ -9,23 +9,25 @@ A Data crawling exercise with NodeJS, MySql, Mocha and Chai
 <img src="https://img.shields.io/badge/TEST-passing-green.svg">
 
 
-<b>Jumpspider</b> is an exercise for crawling and parsing HTML content while testing technology and software development practices. It is implemented with Node.js and MySQL. It also uses Mocha and Chai test libraries to implement BDD at a basic degree that should be extensible during a CI process. 
+<b>Jumpspider</b> is an exercise for crawling HTML documents and parsing table data. Even when the scope is not very ambitious this is a great project to work on data crawler topics testing technology and software development practices.
 
-As an initial exercise, the parsing is specificly taylored to get HTML tables with NBA division results that comply with a very specific structure. This could be extended and generalized in the future to other purposes. 
+ It implementation stack includes Node.js and MySQL. It also uses Mocha and Chai test libraries to provide a BDD and CI starting point.
 
-Jumpspider is developed with the following goals in mind:
+In this humble example, the parsing is specifically tailored to get HTML tables with NBA division results that comply with a very specific structure. This should be extended and generalized in the future to parse different types of data.
 
-- Extensibility: There is support for evolvi....
-- Scalability: 
- - 	The Node.js server was developed for asyncronous processing.
- - Steps try to cover atomic functions and run asyncronoulsy
- - Results are stored in the database (Jobs, HTML , Parsing results) thinking in a future implementation with diferent microservices performing tasks at a bigger scale.
-- CI: A basic Integration testing baslined is delivered with Mocha and Chai to support code growth.
+Jumpspider has been developed with a bigger distributed architecture in mind. Some of the implementation details may look like an overkill but were developed with the idea of scaling the solution in the future. 
+
+- The solution can be accessed via a Web API 
+- Processes can work completely asynchronously.
+- Each step of a crawl job is prepared to run asynchronously 
+- Results are stored in the database (Jobs, HTML , Parsing results) for future coordination with different agents
+- A basic BDD Integration Test is provided with Mocha and Chai as baseline to support CI
 
 
 ## Architecture
 
-The architecture stack relies heavily on <b>JavaScript</b>. and lightweight frameworks aimed to develop scalable web solutions. I think performance of the backend is pretty solid. I am still wondering if I should follow a native approach for the frontends:
+The architecture has separate Development and a Test databases, refer to the Install section for details.<br>
+The following table details some of the main components and their role:<br>
 
 <table>
   <tr>
@@ -65,45 +67,81 @@ The architecture stack relies heavily on <b>JavaScript</b>. and lightweight fram
 Before starting you will need:
 
 - An instance of <b>Node.js</b> installed 
-- An instance of MySql server
- - A dev and a test databases 
- - A user with admin privileges for both databases
-- Internet access to perform some mindful HTML crawling
+- An instance of MySQL server
+ - 2 databases for evelopment and test 
+ - An SQL user with admin privileges for both databases
+- Internet access to perform some mindful and shy HTML crawling
 
-It is also recommended to use tools like Postman to experiment with Web API methods and MySQLWorkbench to review the databases.
+It is also recommended to use tools like Postman to experiment with the Web API methods and a tool like MySQLWorkbench to review the databases.
 
-Also tools like GitHub Desktop and the IDE Webstorm can make your development experience more pleasant.
+For extending the solution, tools like GitHub Desktop and the  WebStorm IDE can make your development experience more pleasant.
 
 ## Installation
 
 First get a copy of the project from the GitHub repository <a href="https://github.com/carloswestman/jumpspider"> https://github.com/carloswestman/jumpspider</a>
 
-From where you downloaded the project, go to the src folder '''jumpspider/src''' and run the command:
+From the folder where you downloaded the project, go to the src folder '''jumpspider/src''' and run the command:
 
 ```npm install ```
 
-This will install the Module dependencies described in the file ```package.json``` into the folder ```jumpspider/src/node_modules```.
+This will install the module dependencies described in the file ```package.json``` into the folder ```jumpspider/src/node_modules```.
 
-The project has two environments, Development and Test. Each environment uses a separate database. Create two databases for instance, 'jumpspider' and 'jumpspider_test' and a user with admin access to them.
+The project has two environments, Development and Test. Each environment uses a separate database. Create two databases for instance: 'jumpspider' and 'jumpspider_test' and a user with admin access to them, for instance: 'finley'.
 
-Then make sure that the configuration files for each environment match your settings:
+According to your configuration, make sure that the configuration files for each environment look like this:
 
-Default
+jumpspider/src/config/default.json
 '''
-a
+{
+  "mySqlConnectionString": {
+    "connectionLimit" : 100,
+    "host"     : "localhost",
+    "user"     : "finley",
+    "password" : "some_pass",
+    "database" : "jumperSpider",
+    "debug"    :  false,
+    "multipleStatements" :true
+  },
+  "logLevel": "info",
+  "port": "8080"
+}
 '''
 
-Development
+jumpspider/src/config/default.json
 '''
-a
+{
+  "mySqlConnectionString": {
+    "connectionLimit" : 100,
+    "host"     : "localhost",
+    "user"     : "finley",
+    "password" : "some_pass",
+    "database" : "jumperSpider",
+    "debug"    :  false,
+    "multipleStatements" :true
+  },
+  "logLevel": "info",
+  "port": "8080"
+}
 '''
 
-Test
+jumpspider/src/config/test.json
 '''
-a
+{
+  "mySqlConnectionString": {
+    "connectionLimit" : 100,
+    "host"     : "localhost",
+    "user"     : "finley",
+    "password" : "some_pass",
+    "database" : "jumperSpiderTest",
+    "debug"    :  false,
+    "multipleStatements" :true
+  },
+  "logLevel": "error",
+  "port": "8080"
+}
 '''
 
-
+Note that the 'database' parameter is different for the Test environment.
 
 
 ## Run
@@ -116,7 +154,7 @@ node server.js
 
 ## Testing
 
-The server can be run with the command:
+The server can be tested with the command:
 
 ``` 
 npm test 
@@ -127,8 +165,6 @@ This should return the following output:
 ```
 jumpSpider@0.0.0 test /Users/carloswestman/Documents/dev/jumpspider/jumpspider/src
 > mocha --timeout 10000
-
-
 
   jumpSpider
     /DELETE api/dropalltables
@@ -155,7 +191,7 @@ jumpSpider@0.0.0 test /Users/carloswestman/Documents/dev/jumpspider/jumpspider/s
 
 ## API
 
-A Web API implements some minimal methods to test the application. You can create new jobs, and return HTML, and parsing results from the repository:
+A Web API implements some minimal methods. These methods are also useful to test the application in isolation. You can create new jobs, and return HTML, and parsing results from the repository:
 
 <table>
 <tr>
@@ -206,7 +242,7 @@ None
 Response
 </td>
 <td>
-A successful response will generate a 200 http status. If an error ocurs, an http error status code will be generated.<br>
+A successful response will generate a 200 http status. If an error occurs, an http error status code will be generated.<br>
 Successful response Example:<br>
 <pre style="json">
 [
@@ -235,7 +271,7 @@ Description
 </td>
 <td>
 Posts a new crawl job<br>
-At the moment the methods waits for the job to finnish to return the outputs of each step of the crawler. This could be modified to enqueue jobs and have a separate method for listing the results<br>
+At the moment the method waits for the job to finish to return the outputs of each step of the crawler. In the future this could be modified to only add a crawling job and relay on other methods for listing the results when the job ends<br>
 Call example:<br>
 <pre style="url">
 http://localhost:8080/api/repository?url=http://www.nba.com/standings/2012/team_record_comparison/conferenceNew_Std_Div.html?ls=iref:nba:gnav
@@ -264,7 +300,7 @@ Parameters<br>
 Response
 </td>
 <td>
-A successful response will generate a 200 http status. If an error ocurs, an http error status code will be generated.<br>
+A successful response will generate a 200 http status. If an error occurs, an http error status code will be generated.<br>
 Successful response Example:<br>
 <pre style="json">
 ````
@@ -331,7 +367,7 @@ Parameters<br>
 Response
 </td>
 <td>
-A successful response will generate a 200 http status. If an error ocurs, an http error status code will be generated.<br>
+A successful response will generate a 200 http status. If an error occurs, an http error status code will be generated.<br>
 Successful response Example:<br>
 <pre style="json">
 ```
@@ -358,7 +394,7 @@ Successful response Example:<br>
 Description
 </td>
 <td>
-Gets an Json object with table parsing results<br>
+Gets an JSON object with table parsing results<br>
 Note that an individual table actually exists in the SQL server, available for analysis purposes<br>
 Call example:<br>
 <pre style="url">
@@ -388,7 +424,7 @@ Parameters<br>
 Response
 </td>
 <td>
-A successful response will generate a 200 http status. If an error ocurs, an http error status code will be generated.<br>
+A successful response will generate a 200 http status. If an error occurs, an http error status code will be generated.<br>
 Successful response Example:<br>
 <pre style="json">
 ```
@@ -429,7 +465,7 @@ Description
 </td>
 <td>
 Deletes all the tables with a name pattern like 'table%'<br>
-It is a maintenance method used when testing. It doensn't deletes the repository where the HTML documents and the job info is stored<br>
+It is a maintenance method used when testing. It doesn't deletes the repository where the HTML documents and the job info is stored<br>
 Call example:<br>
 <pre style="url">
 http://localhost:8080/api/dropalltables
@@ -456,7 +492,7 @@ None
 Response
 </td>
 <td>
-A successful response will generate a 200 http status. If an error ocurs, an http error status code will be generated.<br>
+A successful response will generate a 200 http status. If an error occurs, an http error status code will be generated.<br>
 Successful response Example:<br>
 <pre style="json">
 {
@@ -468,15 +504,20 @@ Successful response Example:<br>
 
 <table>
 
-## Conslusions and future work
+## Conclusions and future work
 
-To test an automated API documentation tool. The effort could make sense for mantaining a bigger code base.
+This experience provided some insight about data crawling and parsing. It also tested some trendy platforms and tools for the job and implemented an automated testing setup to allow an agile development approach.
 
-To test the crawler under load with Siege.
+Possibilities are widespread, here there are some things that I would like to try next:
 
-## Furhter links and reading
+- To perform an stress test with a tool like Siege.
+- To test an automated API documentation tool. The effort could make sense for maintaining a bigger code base.
 
-Here there is some interesting reading that I found during this exercise:
+
+
+## Further links and reading
+
+Here there are some interesting readings that I found during this exercise:
 
  - "The Anatomy of a Large-Scale Hypertextual Web Search Engine": <a href="http://infolab.stanford.edu/~backrub/google.html"> http://infolab.stanford.edu/~backrub/google.html</a>
  - "The beginners guide to SEO: <a href="https://moz.com/beginners-guide-to-seo">https://moz.com/beginners-guide-to-seo</a>
@@ -494,6 +535,5 @@ Distributed under the MIT license. See ``LICENSE`` for more information.
 
 [https://github.com/carloswestman/boulderer](https://github.com/carloswestman/jumpspider)
 
-## Apendix A: Furhter testing
 
 
