@@ -9,15 +9,15 @@ A Data crawling exercise with NodeJS, MySQL, Mocha and Chai
 <img src="https://img.shields.io/badge/TEST-passing-green.svg">
 
 
-<b>Jumpspider</b> is an exercise for crawling HTML documents and parsing table data. Even when the scope is not very ambitious this is a great project to work on data crawler topics testing technology and software development practices.
+<b>Jumpspider</b> is an exercise for crawling HTML documents and parsing data. It's designed as a starting point to add more parsing functionality and to scale up. This is an instance to research on data crawler topics and to test technology and software development practices.
 
- It implementation stack includes Node.js and MySQL. It also uses Mocha and Chai test libraries to provide a BDD and CI starting point.
+ The implementation stack includes Node.js and MySQL. It also uses Mocha and Chai test libraries to facilitate a Behaviour-Driven Development and Continuous Integration approach.
 
-In this humble example, the parsing is specifically tailored to get HTML tables with NBA division results that comply with a very specific structure. This should be extended and generalized in the future to parse different types of data.
+In this example, the parsing is specifically tailored to get HTML tables with NBA division results that comply with a specific structure. This should be extended and generalized in the future to parse different types of data.
 
 Jumpspider has been developed with a bigger distributed architecture in mind. Some of the implementation details may look like an overkill but were developed with the idea of scaling the solution in the future. 
 
-- The solution can be accessed via a Web API 
+- The solution can be accessed via a Web API as a service.
 - Processes can work completely asynchronously.
 - Each step of a crawl job is prepared to run asynchronously 
 - Results are stored in the database (Jobs, HTML , Parsing results) for future coordination with different agents
