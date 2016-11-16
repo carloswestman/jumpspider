@@ -73,8 +73,6 @@ Before starting you will need:
 
 - An instance of <b>Node.js</b> installed 
 - An instance of MySQL server
- - 2 databases for evelopment and test 
- - An SQL user with admin privileges for both databases
 - Internet access to perform some mindful and shy HTML crawling
 
 It is also recommended to use tools like Postman to experiment with the Web API methods and a tool like MySQLWorkbench to review the databases.
