@@ -551,7 +551,7 @@ This experience provided some insight about data crawling and parsing. It also t
 
 Possibilities are widespread, here there are some things that I would like to try next:
 
-- To perform an stress test with a tool like Siege.
+- To perform an stress test with a tool like Siege (this has been done, please see Apendix A).
 - To test an automated API documentation tool. The effort could make sense for maintaining a bigger code base.
 
 
@@ -576,5 +576,95 @@ Distributed under the MIT license. See ``LICENSE`` for more information.
 
 [https://github.com/carloswestman/boulderer](https://github.com/carloswestman/jumpspider)
 
+## Apendix A: API stress test
+
+I am using the tool <a url="https://github.com/JoeDog/siege"> Siege</a> to perform a stress test of the API. With Siege we can have a better idea of our system performance under concurrent connections as the system scales up.
+
+At this time, I will only ask for stored parsed data. I will not create new crawl jobs from external websites to avoid stressing an external system.
+
+So we will be querying a parsed document already stored in MySQL with the following API call:
+
+```
+GET http://localhost:8080/api/table/
+``` 
+
+Let's start with the following command:
+
+```
+siege http://localhost:8080/api/table/ca5d3d2b5d23495987b23cd0d3a29ed5 -c10 -d1 -t1m
+```
+
+Siege will call our API with 10 concurrent calls during one minute. The calls are delayed with a random value in between of 0 and 1 seconds to simulate more realistic scenario.
+
+ These are the results:
+
+````
+Lifting the server siege...
+Transactions:		        1117 hits
+Availability:		      100.00 %
+Elapsed time:		       59.01 secs
+Data transferred:	        7.87 MB
+Response time:		        0.01 secs
+Transaction rate:	       18.93 trans/sec
+Throughput:		        0.13 MB/sec
+Concurrency:		        0.22
+Successful transactions:        1117
+Failed transactions:	           0
+Longest transaction:	        0.49
+Shortest transaction:	        0.00
+````
+
+We obtained an availability of 100% with 0 failed transactions.
+Let's scale up to 100 concurrent calls:
+
+```
+siege http://localhost:8080/api/table/ca5d3d2b5d23495987b23cd0d3a29ed5 -c100 -d1 -t1m
+```
+
+These are the results:
+
+```
+Lifting the server siege...
+Transactions:		       10836 hits
+Availability:		      100.00 %
+Elapsed time:		       59.23 secs
+Data transferred:	       76.31 MB
+Response time:		        0.05 secs
+Transaction rate:	      182.95 trans/sec
+Throughput:		        1.29 MB/sec
+Concurrency:		        9.87
+Successful transactions:       10836
+Failed transactions:	           0
+Longest transaction:	        2.15
+Shortest transaction:	        0.00
+```
+
+Now let's try 150 concurrent connections:
+
+```
+siege http://localhost:8080/api/table/ca5d3d2b5d23495987b23cd0d3a29ed5 -c150 -d1 -t1m
+```
+
+```
+Lifting the server siege...
+Transactions:		       11730 hits
+Availability:		       99.26 %
+Elapsed time:		       59.50 secs
+Data transferred:	       82.60 MB
+Response time:		        0.27 secs
+Transaction rate:	      197.14 trans/sec
+Throughput:		        1.39 MB/sec
+Concurrency:		       52.33
+Successful transactions:       11730
+Failed transactions:	          87
+Longest transaction:	        5.59
+Shortest transaction:	        0.00
+```
+
+We can see how the availability of the interface degrades after passing the 100 concurrent connections. This is precisely the number of maximum connections defined in our MySQL connection pool. 
+
+It's good that the availability degrades nicely as some of the connections are queued and a part of them time out. 100 concurrent connections and 10836 hits per minute is a capacity that will suite mostly any typical requirements. 
+
+It also makes us aware that at the time of scaling the system, every agent using the API should be able to handle failed request in a way that degrades nicely and doesn't make the whole system fail.
 
 
