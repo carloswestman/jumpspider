@@ -62,9 +62,9 @@ function doCalculations()
 
 
     console.log('Team with most wins on 2014 is ' + team + ' with ' + wins + ' wins.');
-    console.log(team + 'movement 2014-2014 is ' + (wins - record2014.W ));
-    console.log(team + 'movement 2014-2013 is ' + (wins - record2013.W ));
-    console.log(team + 'movement 2014-2012 is ' + (wins - record2012.W ));
+    console.log(team + ' movement 2014-2014 is ' + (wins - record2014.W ));
+    console.log(team + ' movement 2014-2013 is ' + (wins - record2013.W ));
+    console.log(team + ' movement 2014-2012 is ' + (wins - record2012.W ));
 
 }
 
