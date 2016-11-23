@@ -1,0 +1,23 @@
+{
+  "name": "jumpSpiderClient",
+  "version": "1.0.0",
+  "description": "A client that consumes data from Jumpspider",
+  "main": "server.js",
+  "author": "Carlos Westman",
+  "license": "MIT",
+  "dependencies": {
+    "config": "^1.20.1",
+    "request": "^2.65.0",
+    "url-parse": "^1.0.5",
+    "winston": "^2.3.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-http": "^2.0.1",
+    "mocha": "^2.4.5"
+  },
+  "scripts": {
+    "start": "set NODE_ENV=dev && node server.js",
+    "test": "./node_modules/mocha/bin/mocha --timeout 10000"
+  }
+}

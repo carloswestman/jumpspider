@@ -19,9 +19,11 @@ var tools = require('./tools.js');               //Some tools
 /// SQL Queries
 var checkTableExistsQuery ="show tables like ?";
 var createTableRepositoryQuery = "CREATE TABLE `repository` (`id` INT NOT NULL AUTO_INCREMENT, `exectimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, `jobid` VARCHAR(500) NOT NULL, `url` VARCHAR(500) NOT NULL, `document` text CHARACTER SET utf8, PRIMARY KEY (`id`), UNIQUE INDEX `id_UNIQUE` (`id` ASC));";
+var createTableParseResults = "CREATE TABLE `parseresults` (`id` int(11) NOT NULL AUTO_INCREMENT,`jobid` varchar(500) NOT NULL,`parsedata` JSON NOT NULL,PRIMARY KEY (`id`),UNIQUE KEY `id_UNIQUE` (`id`)) ";
 var insertTableRepositoryQuery = "INSERT INTO `repository` (`jobid`, `url`, `document`) VALUES ? ";
 var createTableDataQuery = "CREATE TABLE `data` (`id` int(11) NOT NULL AUTO_INCREMENT, `jobid` varchar(500) NOT NULL, `row` varchar(100) NOT NULL, `key` varchar(100) NOT NULL, `value` varchar(100) DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id_UNIQUE` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=1330 DEFAULT CHARSET=latin1;";
 var insertTableDataQuery = "INSERT INTO data (jobid, `row`, `key`, `value`) VALUES ?";
+var insertTableParseResults = "INSERT INTO `parseresults` (`jobid`, `parsedata`) VALUES ?";
 var createTableView1Query = "CREATE TABLE ";
 var createTableView3Query = " (`id` int(11) NOT NULL AUTO_INCREMENT, `jobid` varchar(500) NOT NULL, `row` varchar(100) NOT NULL " ;
 var createTableView5Query =  ", PRIMARY KEY (`id`), UNIQUE KEY `id_UNIQUE` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=1330 DEFAULT CHARSET=latin1;";
@@ -32,6 +34,7 @@ var selectTable1Query = 'SELECT * from ';
 var selectTable3Query = ' LIMIT 500';
 var selectRepositoryQuery = 'SELECT `exectimestamp`, `jobid`, `url` from repository LIMIT 1000';
 var selectRepositoryDocument1Query = 'SELECT `document` from repository where `jobid` =';
+var selectParseResults1Query = 'SELECT `parsedata` from parseresults where `jobid` =';
 var dropAllTablesQuery = "SELECT (concat(table_schema , '.' , table_name)) as val FROM information_schema.tables WHERE table_schema = '" + config.mySqlConnectionString.database + "' AND (table_name LIKE 'table%')";
 
 
@@ -263,12 +266,17 @@ function parseTable(req) {
     var columnNames = divisionHeadingNames.first().nextAll() ;
     var arrColumnNames = [];
     columnNames.each(function(i,e){ arrColumnNames.push($(e).text())});
+    arrColumnNames.unshift('DIVISION');
+    arrColumnNames.unshift('CONFERENCE');
 
     //Get team names and Values
     var arrArrValues = [];
     var teamRows = teamNames.parent();
     teamRows.each( function (i,row)
     {
+        var DivisionName = $(row).prevAll('tr.title').find('td.name').first().text();
+        var ConferenceName = $(row).prevAll('tr').find('td.confTitle').first().text();
+
         var arrValues = [];
         var team = $(row).find('tr td.team a').text();
         var values = $(row).find('tr td.team').nextAll();
@@ -276,6 +284,9 @@ function parseTable(req) {
 
         values.each(function (i,val) { arrValues.push($(val).text());});
 
+
+        arrValues.unshift(DivisionName);
+        arrValues.unshift(ConferenceName);
         arrValues.unshift(team);
         arrArrValues.push(arrValues);
 
@@ -309,6 +320,7 @@ function parseTable(req) {
     return deferred.promise;
 }
 function handleDatabaseCreateDictionary(arrArrData) {
+
 
     winston.log('info', "handleDatabaseCreateDictionary Started");
     var deferred = q.defer();
@@ -500,6 +512,50 @@ function handleDatabasePopulateViewTable(req){
     winston.log('info', "handleDatabasePopulateViewTable Ended");
     return deferred.promise;
 }
+function handleDatabasePopulateParseResults(req){
+
+
+    winston.log('info', "handleDatabasePopulateParseResults Started");
+    var deferred = q.defer();
+
+    var uniqueId = req.jobId;
+    var arrJsonData = req.arrJsonElements;
+
+    pool.getConnection(function(err,connection){
+        if (err) {
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
+            deferred.reject(err);
+            return;
+        }
+        winston.log('info', 'connected as id ' + connection.threadId);
+
+
+        //document.replace("'","\'");
+        //document.replace('"',"\"");
+        connection.query(insertTableParseResults, [[[uniqueId, JSON.stringify(arrJsonData)]]], function(err,rows,fields){
+            //winston.log('info', err.message);
+            connection.release();
+            if(!err) {
+                winston.log('info', 'Table parseresults populated');
+                var response = req;
+                deferred.resolve(response);
+            }
+            else
+            {
+                winston.log('info', err.message);
+                deferred.reject(err);
+            }
+        });
+
+        connection.on('error', function(err) {
+            winston.log('info', {"code" : 100, "status" : "Error in connection database"});
+            deferred.reject(error);
+
+        });
+    });
+    winston.log('info', "handleDatabasePopulateViewTable Ended");
+    return deferred.promise;
+}
 function processJob(url) {
 
     var deferred = q.defer();
@@ -513,9 +569,11 @@ function processJob(url) {
     req.url = url;
     req.jobId = jobId;
 
+    var set = [];
     fetchUrl(req)  //fectch HTML doc
         .then(handleDatabaseStoreDocument) //Store HTML doc in database for future use
         .then(parseTable)
+        .then(handleDatabasePopulateParseResults)
         .then(handleDatabaseCreateViewTable)
         .then(handleDatabasePopulateViewTable)
         .then( function(res){
@@ -527,6 +585,7 @@ function processJob(url) {
                 deferred.reject(error);
              })
         .done();
+
 
     winston.log('info', "processJob Ended");
     return deferred.promise;
@@ -684,6 +743,45 @@ app.route('/api/document/:jobId')
             });
         });
     });
+
+app.route('/api/parsedresult/:jobId')
+    .get(function(req,res){
+        winston.log('info', 'GET /api/parseresult/:jobId');
+
+        //get URL params
+        var jobId = req.params.jobId;
+        jobId = jobId.replace(';','');
+
+        var selectParseResultsQuery = selectParseResults1Query+ "'" + jobId + "'";
+
+        pool.getConnection(function(err,connection){
+            if (err) {
+                res.status(100).send(err);
+                res.end();
+            }
+            winston.log('info', 'connected as id ' + connection.threadId);
+
+            connection.query(selectParseResultsQuery, function(err,rows,fields){
+                connection.release();
+                if(!err) {
+                    res.contentType('text/html')
+                    res.status(200).send(rows);
+                    res.end();
+                }
+                else
+                {
+                    res.status(400).send(err);
+                    res.end();
+                }
+            });
+
+            connection.on('error', function(err) {
+                res.status(400).send(err);
+                res.end();
+            });
+        });
+    });
+
 
 app.route('/api/dropalltables')
     .delete(function(req,res){
